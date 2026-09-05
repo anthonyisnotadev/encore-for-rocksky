@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+jobs:
+  analyze-and-test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+
+  build:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: analyze-and-test
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      # build_portable.ps1 runs `flutter build windows --release` itself.
+      - name: Build portable zip
+        shell: pwsh
+        run: '& tool\build_portable.ps1'
+
+      # Packs the Release output just built above into one double-clickable exe.
+      - name: Build single exe
+        shell: pwsh
+        run: '& tool\build_single_exe.ps1 -SkipBuild -OutputName encore-for-rocksky-${{ github.ref_name }}.exe'
+
+      - name: Extract release notes from CHANGELOG.md
+        shell: pwsh
+        run: |
+          $tag = '${{ github.ref_name }}'.TrimStart('v')
+          $content = Get-Content CHANGELOG.md -Raw
+          if ($content -match "(?s)## \[$([regex]::Escape($tag))\][^\r\n]*(.*?)(?=\r?\n## \[|\z)") {
+            $matches[0] | Set-Content -NoNewline release_notes.md
+          } else {
+            "Release $tag." | Set-Content release_notes.md
+          }
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: encore-for-rocksky-${{ github.ref_name }}
+          path: build/portable/*.zip
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: release_notes.md
+          files: |
+            build/portable/*.zip
+            build/portable/*.exe

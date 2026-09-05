@@ -1,0 +1,30 @@
+# Normalise text files to LF in the repository, and check them out as LF on
+# every platform.
+#
+# The `eol=lf` half is the part that matters here. `text=auto` alone stores LF
+# but leaves checkout to core.autocrlf, which is `true` on a typical Windows
+# install -- so the working tree would be rewritten to CRLF and the next commit
+# touching any file would carry a whole-file diff. Pinning LF keeps what is
+# committed and what is on disk the same bytes.
+#
+# Nothing here needs CRLF: PowerShell, MSVC's rc.exe and the Dart toolchain all
+# read LF fine.
+* text=auto eol=lf
+
+# The one exception, kept for whoever adds a batch helper later: cmd.exe is the
+# last thing on Windows that still genuinely wants CRLF, and mis-parses labels
+# and `goto` without it.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Icons: the app icon compiled into the .exe via windows/runner/Runner.rc, the
+# tray icon loaded as a Flutter asset, and the OpenMoji original it came from.
+# `binary` marks them -text -diff, so they are never line-ending normalised.
+*.ico binary
+
+# third_party/local_notifier is upstream code carrying a one-function patch
+# (see third_party/local_notifier/FORK.md). Marking it vendored keeps its Dart,
+# C++, Swift and Objective-C out of GitHub's language statistics, so those
+# describe this app rather than its dependency, and collapses it by default in
+# pull request diffs.
+third_party/** linguist-vendored

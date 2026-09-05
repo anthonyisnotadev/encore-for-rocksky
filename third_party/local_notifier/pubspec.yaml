@@ -1,0 +1,33 @@
+name: local_notifier
+description: Vendored fork of local_notifier 0.1.6. See FORK.md for the patch.
+version: 0.1.6
+homepage: https://github.com/leanflutter/local_notifier
+publish_to: none
+
+platforms:
+  linux:
+  macos:
+  windows:
+
+topics:
+  - notifications
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+  flutter: ">=3.3.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  uuid: ">=3.0.7 <5.0.0"
+
+flutter:
+  plugin:
+    platforms:
+      linux:
+        pluginClass: LocalNotifierPlugin
+      macos:
+        pluginClass: LocalNotifierPlugin
+      windows:
+        pluginClass: LocalNotifierPlugin
